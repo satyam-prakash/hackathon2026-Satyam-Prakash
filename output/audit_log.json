@@ -1,0 +1,489 @@
+{
+  "run_timestamp": "2026-04-18T15:18:34.840279Z",
+  "total_tickets": 20,
+  "resolved": 20,
+  "escalated": 0,
+  "dead_letter": 0,
+  "avg_confidence": 0.55,
+  "avg_tool_calls_per_ticket": 0.1,
+  "total_duration_ms": 3094,
+  "results": [
+    {
+      "ticket_id": "TKT-001",
+      "customer_email": "alice.turner@email.com",
+      "subject": "Refund request for headphones",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1094,
+      "timestamp": "2026-04-18T15:18:34.846360Z"
+    },
+    {
+      "ticket_id": "TKT-002",
+      "customer_email": "bob.mendes@email.com",
+      "subject": "I want to return my watch",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1084,
+      "timestamp": "2026-04-18T15:18:34.849344Z"
+    },
+    {
+      "ticket_id": "TKT-003",
+      "customer_email": "carol.nguyen@email.com",
+      "subject": "Coffee maker stopped working",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 1.0,
+      "escalated": false,
+      "tool_calls": [
+        "get_customer"
+      ],
+      "total_tool_calls": 1,
+      "steps": [
+        {
+          "step": 1,
+          "thought": "The customer is reporting a defective coffee maker and wants a replacement or refund. I need to identify the customer and their order to determine the next steps. I will start by looking up the customer's profile using their email address.",
+          "action": "get_customer",
+          "action_input": {
+            "email": "carol.nguyen@email.com"
+          },
+          "confidence": 1.0,
+          "tool_results": [
+            {
+              "tool": "get_customer",
+              "input": {
+                "email": "carol.nguyen@email.com"
+              },
+              "result": {
+                "customer_id": "C003",
+                "name": "Carol Nguyen",
+                "email": "carol.nguyen@email.com",
+                "phone": "+1-312-555-0143",
+                "tier": "premium",
+                "member_since": "2021-06-18",
+                "total_orders": 22,
+                "total_spent": 3120.75,
+                "address": {
+                  "street": "45 Oak Lane",
+                  "city": "Chicago",
+                  "state": "IL",
+                  "zip": "60601"
+                },
+                "notes": "Premium member. Prefers email communication."
+              },
+              "attempt": 1,
+              "success": true
+            }
+          ]
+        },
+        {
+          "step": 1,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": "```json\n{\n  \"thought\": \"The customer is reporting a defective coffee maker and wants a replacement or refund. I need to identify the customer and their order to determine the next steps. I will start by looking up the customer's profile using their email address.\",\n  \"action\": \"get_customer\",\n  \"action_input\": {\n    \"email\": \"carol.nguyen@email.com\"\n  },\n  \"confidence\": 1.0,\n  \"needs_escalation\": false\n}\n```"
+        }
+      ],
+      "duration_ms": 3084,
+      "timestamp": "2026-04-18T15:18:34.851042Z"
+    },
+    {
+      "ticket_id": "TKT-004",
+      "customer_email": "david.park@email.com",
+      "subject": "Wrong size delivered",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1083,
+      "timestamp": "2026-04-18T15:18:34.853047Z"
+    },
+    {
+      "ticket_id": "TKT-005",
+      "customer_email": "emma.collins@email.com",
+      "subject": "Return request",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 951,
+      "timestamp": "2026-04-18T15:18:34.854557Z"
+    },
+    {
+      "ticket_id": "TKT-006",
+      "customer_email": "frank.osei@email.com",
+      "subject": "I want to cancel",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1082,
+      "timestamp": "2026-04-18T15:18:34.857578Z"
+    },
+    {
+      "ticket_id": "TKT-007",
+      "customer_email": "grace.patel@email.com",
+      "subject": "Laptop stand return",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1489,
+      "timestamp": "2026-04-18T15:18:34.860346Z"
+    },
+    {
+      "ticket_id": "TKT-008",
+      "customer_email": "henry.marsh@email.com",
+      "subject": "Lamp came broken",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1072,
+      "timestamp": "2026-04-18T15:18:34.861450Z"
+    },
+    {
+      "ticket_id": "TKT-009",
+      "customer_email": "irene.castillo@email.com",
+      "subject": "Refund already done?",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1074,
+      "timestamp": "2026-04-18T15:18:34.862429Z"
+    },
+    {
+      "ticket_id": "TKT-010",
+      "customer_email": "james.wu@email.com",
+      "subject": "Where is my order?",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 695,
+      "timestamp": "2026-04-18T15:18:34.863524Z"
+    },
+    {
+      "ticket_id": "TKT-011",
+      "customer_email": "alice.turner@email.com",
+      "subject": "Wrong colour watch received",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1070,
+      "timestamp": "2026-04-18T15:18:34.864529Z"
+    },
+    {
+      "ticket_id": "TKT-012",
+      "customer_email": "carol.nguyen@email.com",
+      "subject": "Cancel my new order",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 985,
+      "timestamp": "2026-04-18T15:18:34.866038Z"
+    },
+    {
+      "ticket_id": "TKT-013",
+      "customer_email": "grace.patel@email.com",
+      "subject": "Return for bluetooth speaker",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1072,
+      "timestamp": "2026-04-18T15:18:34.867638Z"
+    },
+    {
+      "ticket_id": "TKT-014",
+      "customer_email": "henry.marsh@email.com",
+      "subject": "Thinking about returning my watch",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1073,
+      "timestamp": "2026-04-18T15:18:34.867638Z"
+    },
+    {
+      "ticket_id": "TKT-015",
+      "customer_email": "emma.collins@email.com",
+      "subject": "Damaged coffee maker",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 1.0,
+      "escalated": false,
+      "tool_calls": [
+        "get_customer"
+      ],
+      "total_tool_calls": 1,
+      "steps": [
+        {
+          "step": 1,
+          "thought": "The customer is reporting a damaged coffee maker and wants a replacement. I need to verify the customer's information, check the order details, and then determine the next steps. Since the customer is requesting a replacement and not a refund, I will need to escalate the ticket.",
+          "action": "get_customer",
+          "action_input": {
+            "email": "emma.collins@email.com"
+          },
+          "confidence": 1.0,
+          "tool_results": [
+            {
+              "tool": "get_customer",
+              "input": {
+                "email": "emma.collins@email.com"
+              },
+              "result": {
+                "customer_id": "C005",
+                "name": "Emma Collins",
+                "email": "emma.collins@email.com",
+                "phone": "+1-512-555-0165",
+                "tier": "vip",
+                "member_since": "2018-11-02",
+                "total_orders": 91,
+                "total_spent": 14220.0,
+                "address": {
+                  "street": "7 Sunset Blvd",
+                  "city": "Austin",
+                  "state": "TX",
+                  "zip": "73301"
+                },
+                "notes": "Highest lifetime value customer. Has a standing exception for extended return windows pre-approved by management."
+              },
+              "attempt": 1,
+              "success": true
+            }
+          ]
+        },
+        {
+          "step": 1,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": "```json\n{\n  \"thought\": \"The customer is reporting a damaged coffee maker and wants a replacement. I need to verify the customer's information, check the order details, and then determine the next steps. Since the customer is requesting a replacement and not a refund, I will need to escalate the ticket.\",\n  \"action\": \"get_customer\",\n  \"action_input\": {\n    \"email\": \"emma.collins@email.com\"\n  },\n  \"confidence\": 1.0,\n  \"needs_escalation\": false\n}\n```"
+        }
+      ],
+      "duration_ms": 3065,
+      "timestamp": "2026-04-18T15:18:34.869632Z"
+    },
+    {
+      "ticket_id": "TKT-016",
+      "customer_email": "unknown.user@email.com",
+      "subject": "Refund request",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 942,
+      "timestamp": "2026-04-18T15:18:34.870675Z"
+    },
+    {
+      "ticket_id": "TKT-017",
+      "customer_email": "david.park@email.com",
+      "subject": "Refund for shoes",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1477,
+      "timestamp": "2026-04-18T15:18:34.870675Z"
+    },
+    {
+      "ticket_id": "TKT-018",
+      "customer_email": "bob.mendes@email.com",
+      "subject": "Urgent refund needed",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1673,
+      "timestamp": "2026-04-18T15:18:34.871843Z"
+    },
+    {
+      "ticket_id": "TKT-019",
+      "customer_email": "irene.castillo@email.com",
+      "subject": "General question about returns",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1677,
+      "timestamp": "2026-04-18T15:18:34.871843Z"
+    },
+    {
+      "ticket_id": "TKT-020",
+      "customer_email": "james.wu@email.com",
+      "subject": "my thing is broken pls help",
+      "status": "resolved",
+      "action_taken": "Processed",
+      "confidence": 0.5,
+      "escalated": false,
+      "tool_calls": [],
+      "total_tool_calls": 0,
+      "steps": [
+        {
+          "step": 0,
+          "error": "LLM parse error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}",
+          "raw": ""
+        }
+      ],
+      "duration_ms": 1566,
+      "timestamp": "2026-04-18T15:18:34.871843Z"
+    }
+  ],
+  "dead_letter_queue": []
+}
