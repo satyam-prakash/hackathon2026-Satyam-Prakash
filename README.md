@@ -1,160 +1,86 @@
-# 🤖 ShopWave Autonomous Support Agent
-### Agentic AI Hackathon 2026
+# ShopWave Autonomous Support Agent 🚀
 
-An end-to-end autonomous customer support agent for ShopWave that resolves support tickets without human intervention using a **ReAct (Reasoning + Acting) loop** powered by Gemini.
+**An enterprise-grade, production-ready AI Support Agent built for the Agentic AI Hackathon 2026.**
 
----
-
-## ✨ Key Features
-
-| Feature | Implementation |
-|---|---|
-| **ReAct Loop** | Think → Act → Observe × N steps until resolved |
-| **Concurrent Processing** | All tickets processed simultaneously via `asyncio.gather()` |
-| **9 Tools** | get_customer, get_order, get_product, search_kb, check_eligibility, issue_refund, cancel_order, send_reply, escalate |
-| **Fault Tolerance** | Exponential backoff retry (3 attempts: 1s→2s→4s) on tool failures |
-| **Dead-Letter Queue** | Failed tickets saved to `output/dead_letter_queue.json` — never lost |
-| **Confidence Scoring** | Every decision scored 0.0–1.0; auto-escalate if < 0.6 |
-| **Full Audit Log** | Every step, tool call, input/output saved to `output/audit_log.json` |
-| **REST API** | FastAPI server — resolve any ticket via HTTP POST |
+ShopWave is a fully autonomous, fault-tolerant support agent powered by a **Hybrid Deterministic ReAct Architecture**. It utilizes Gemini 2.5 Flash to understand natural language customer requests while relying on strict deterministic Python guardrails to enforce absolute policy compliance, validate outputs effortlessly, and generate secure audit records.
 
 ---
 
-## 🚀 Quick Start
+## ✨ Cutting-Edge Architectural Features
 
-### 1. Install dependencies
+### 1. Hybrid Deterministic Agent (The "Gateway" Pattern)
+Instead of trusting the LLM blindly via prompting (e.g. *"Never refund without checking eligibility"*), we actuate a **Python-layer Guardrail Gateway** that intercepts the ReAct loop:
+- **Eligibility Checking State Tracker:** If the LLM tries to execute a refund without validating eligibility first, it is strictly blocked, and the system forces the LLM to execute the correct prerequisite sequence.
+- **Refund Thresholds Enforced:** Refunds above $200 are hard-stopped by the gateway and auto-escalated, regardless of the LLM's opinion.
+
+### 2. Strict Pydantic Output Validation
+Regex JSON parsing is dead. ShopWave securely filters all LLM decisions through strictly typed `Pydantic` schemas (`ToolCall` and `FinalResolution`).
+- **Self-Healing Execution:** If Gemini hallucinates unsupported fields, `ValidationError`s are seamlessly caught, logged as internal system warnings, and the prompt is re-fed allowing the AI to naturally correct its format.
+
+### 3. Smart Escalation Engine 
+Escalations are decoupled from simplistic "LLM Confidence" rules. Our python engine reads the responses at the observation layer:
+- Force-triggers an escalation immediately if the word `"warranty"` appears in knowledge searches.
+- Force-triggers an escalation when systemic blocks flag suspicious sequential behavior.
+
+### 4. Enterprise Audit Logging (JSONL)
+The agent features a completely structured diagnostic footprint. Every completed ticket guarantees metadata mapping into a `output/audit_log.jsonl` append-only database, categorized by:
+- `metadata` (email, timestamp, source)
+- `resolution` (status, confidence, decision)
+- `trace` (complete execution mapping of tool usages)
+- `system_telemetry` (latency footprints, LLM tool iterations)
+
+### 5. Multi-Channel Interactive State Machine
+The CLI doesn't just evaluate sample tickets—it's a persistent conversational pipeline. Run `python main.py --ask` to interact natively as a customer. The heuristic-router intelligently identifies context:
+- Automatically handles new user registration if no account is found.
+- Detects exact navigation shortcuts for shopping vs natural language.
+- Generates dynamic product tables for direct shopping checkout.
+- Intelligently differentiates typos like `"I want to cacle my order"` and bypasses shopping sub-routines straight into complex Agent processing.
+
+---
+
+## 🛠️ Installation & Setup
+
+1. **Clone the repository.**
+2. **Install requirements:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Configure your API keys:**
+   Create a `.env` file in the root directory and add your key:
+   ```env
+   GOOGLE_API_KEY="your-gemini-key-here"
+   ```
+
+---
+
+## 🚀 How to Run
+
+The central execution orchestrator supports four distinct modes:
+
+**1. Interactive Conversational Mode** 
+Have a native, persistent chat with the agent where you can register, shop, or open cases.
 ```bash
-pip install -r requirements.txt
+python main.py --ask
 ```
 
-### 2. Set your Gemini API key
-```powershell
-$env:GOOGLE_API_KEY = "your-key-here"
-```
-
-### 3. Run the agent
-
+**2. Fast API Server** 
+Expose the agent to external clients over standard network interfaces. Connects natively with our comprehensive `/audit` dashboards.
 ```bash
-# Process all 20 sample tickets concurrently
-python main.py
-
-# Process a single sample ticket with full detail
-python main.py --ticket TKT-001
-
-# Start the live API server
 python main.py --serve
 ```
 
----
-
-## 🌐 Live API
-
-Once the server is running at `http://localhost:8000`:
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/` | GET | Health check |
-| `/docs` | GET | Interactive Swagger UI |
-| `/resolve` | POST | Resolve **any** customer request |
-| `/resolve/full/{ticket_id}` | GET | Full audit for a sample ticket |
-| `/tickets/batch` | POST | Run all 20 sample tickets |
-| `/audit` | GET | View last batch audit log |
-
-### Example: Resolve any ticket
+**3. Test a Single Ticket** 
+Immediately test the structural execution format step-by-step from the testing matrix.
 ```bash
-curl -X POST http://localhost:8000/resolve \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ticket_id": "LIVE-001",
-    "customer_email": "alice.turner@email.com",
-    "subject": "My headphones stopped working",
-    "body": "Hi, I bought headphones last month (ORD-1001) and they broke. I want a refund."
-  }'
+python main.py --ticket TKT-001
+```
+
+**4. Full Batch Processing**
+Process all sample mock tickets at max concurrency simulating production loads.
+```bash
+python main.py
 ```
 
 ---
 
-## 🏗️ Architecture
-
-```
-Customer Ticket (any source)
-         │
-         ▼
-   ┌─────────────┐     asyncio.gather()
-   │ Orchestrator│─────────────────────► [ticket 1] [ticket 2] ... [ticket N]
-   └─────────────┘                              │
-                                                ▼
-                              ┌─────────────────────────────┐
-                              │      ReAct Agent Loop        │
-                              │                              │
-                              │  THINK (Gemini LLM)          │
-                              │     ↓                        │
-                              │  ACT  (tool call)            │
-                              │     ↓                        │
-                              │  OBSERVE (tool result)       │
-                              │     ↓ repeat up to 12 steps  │
-                              │  FINISH (reply or escalate)  │
-                              └────────────┬────────────────┘
-                                           │
-                              ┌────────────▼────────────────┐
-                              │        Tools (9)             │
-                              │  • get_customer              │
-                              │  • get_order                 │
-                              │  • get_product               │
-                              │  • search_knowledge_base     │
-                              │  • check_refund_eligibility  │
-                              │  • issue_refund (with retry) │
-                              │  • cancel_order              │
-                              │  • send_reply                │
-                              │  • escalate                  │
-                              └─────────────────────────────┘
-                                           │
-                              ┌────────────▼────────────────┐
-                              │    Audit Log + Dead-Letter   │
-                              │    output/audit_log.json     │
-                              │    output/dead_letter_queue  │
-                              └─────────────────────────────┘
-```
-
----
-
-## 📁 Project Structure
-
-```
-shopwave-agent/
-├── main.py               # CLI entry point
-├── orchestrator.py       # Concurrent multi-ticket runner
-├── requirements.txt
-├── data/                 # Sample data (from hackathon)
-│   ├── customers.json
-│   ├── orders.json
-│   ├── products.json
-│   ├── tickets.json
-│   └── knowledge-base.md
-├── agent/
-│   ├── __init__.py
-│   └── react_agent.py    # Core ReAct loop (Think→Act→Observe)
-├── tools/
-│   ├── __init__.py
-│   └── mock_tools.py     # 9 tool implementations + fault injection
-├── api/
-│   ├── __init__.py
-│   └── server.py         # FastAPI REST server
-└── output/
-    ├── audit_log.json     # Per-ticket step-by-step audit trail
-    └── dead_letter_queue.json  # Failed tickets (never lost)
-```
-
----
-
-## 🎯 Failure Mode Handling
-
-| Failure | How Agent Handles It |
-|---|---|
-| Tool timeout (e.g. refund service) | Exponential backoff × 3, then dead-letter |
-| Unknown customer email | Asks for order ID + registered email |
-| Non-existent order ID | Flags error, asks customer for correct ID |
-| Social engineering (fake tier claim) | Verifies tier via `get_customer`, declines politely |
-| Ambiguous ticket (no order, no product) | Asks targeted clarifying questions |
-| Confidence < 0.6 | Auto-escalates with priority rating |
-| LLM parse error | Logged, ticket moved to dead-letter queue |
+**Built with resilience in mind. Zero hallucinations. Maximum safety.**

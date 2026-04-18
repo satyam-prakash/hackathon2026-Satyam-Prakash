@@ -23,12 +23,16 @@ _products  = {p["product_id"]: p for p in _load("products.json")}
 with open(DATA_DIR / "knowledge-base.md", encoding="utf-8") as f:
     _kb_text = f.read()
 
+# Running counters for new IDs (session-based)
+_next_customer_num = 11    # C001-C010 are taken
+_next_order_num    = 1016  # ORD-1001 to ORD-1015 are taken
+
 
 # ── READ TOOLS ────────────────────────────────────────────────────────────────
 
 async def get_customer(email: str) -> dict:
     """Fetch customer profile, tier, and history by email."""
-    await asyncio.sleep(0.05)   # simulate latency
+    await asyncio.sleep(0.05)
     customer = _customers.get(email.lower().strip())
     if not customer:
         return {"error": f"No customer found with email '{email}'"}
@@ -67,31 +71,130 @@ async def get_orders_by_customer(email: str) -> list:
     return orders
 
 
+async def list_products() -> list:
+    """Return all available products in the ShopWave catalog."""
+    await asyncio.sleep(0.05)
+    return list(_products.values())
+
+
 async def search_knowledge_base(query: str) -> str:
-    """
-    Semantic search on ShopWave policy docs.
-    (Mock: returns the full KB — a real impl would do vector search.)
-    """
+    """Semantic search on ShopWave policy docs."""
     await asyncio.sleep(0.05)
     query_lower = query.lower()
-    # Return the most relevant sections based on keywords
     sections = _kb_text.split("\n## ")
     relevant = []
     for section in sections:
         if any(kw in section.lower() for kw in query_lower.split()):
-            relevant.append(section[:800])   # first 800 chars of section
+            relevant.append(section[:800])
     if relevant:
         return "\n\n---\n\n".join(relevant[:3])
-    return _kb_text[:2000]   # fallback: top of KB
+    return _kb_text[:2000]
 
 
 # ── WRITE TOOLS ───────────────────────────────────────────────────────────────
 
+async def register_customer(name: str, email: str, phone: str = "", city: str = "") -> dict:
+    """
+    Register a new customer account in the ShopWave system.
+    Call this when get_customer() returns an error and the user wants to sign up.
+    """
+    global _next_customer_num
+    await asyncio.sleep(0.1)
+
+    email = email.lower().strip()
+    if email in _customers:
+        return {"error": f"An account with email '{email}' already exists."}
+
+    customer_id = f"C{_next_customer_num:03d}"
+    _next_customer_num += 1
+
+    new_customer = {
+        "customer_id": customer_id,
+        "name": name.strip().title(),
+        "email": email,
+        "phone": phone or "N/A",
+        "tier": "standard",
+        "member_since": datetime.utcnow().strftime("%Y-%m-%d"),
+        "total_orders": 0,
+        "total_spent": 0.0,
+        "address": {
+            "street": "",
+            "city": city or "N/A",
+            "state": "",
+            "zip": ""
+        },
+        "notes": "Newly registered customer via support chat."
+    }
+    _customers[email] = new_customer
+
+    return {
+        "success": True,
+        "customer_id": customer_id,
+        "name": new_customer["name"],
+        "email": email,
+        "tier": "standard",
+        "message": f"Account created successfully! Welcome to ShopWave, {new_customer['name']}!"
+    }
+
+
+async def place_order(email: str, product_id: str, quantity: int = 1) -> dict:
+    """
+    Place a new order for a customer.
+    Call after confirming product_id and quantity with the customer.
+    """
+    global _next_order_num
+    await asyncio.sleep(0.1)
+
+    customer = _customers.get(email.lower().strip())
+    if not customer:
+        return {"error": f"Customer '{email}' not found. Please register first."}
+
+    product = _products.get(product_id.strip().upper())
+    if not product:
+        return {"error": f"Product '{product_id}' not found."}
+
+    if quantity < 1:
+        return {"error": "Quantity must be at least 1."}
+
+    order_id  = f"ORD-{_next_order_num}"
+    _next_order_num += 1
+    amount    = round(product["price"] * quantity, 2)
+    order_date = datetime.utcnow().strftime("%Y-%m-%d")
+
+    new_order = {
+        "order_id": order_id,
+        "customer_id": customer["customer_id"],
+        "product_id": product_id.upper(),
+        "quantity": quantity,
+        "amount": amount,
+        "status": "processing",
+        "order_date": order_date,
+        "delivery_date": None,
+        "return_deadline": None,
+        "refund_status": None,
+        "notes": f"Placed via support chat on {order_date}."
+    }
+    _orders[order_id] = new_order
+    _customers[email.lower()]["total_orders"] += 1
+    _customers[email.lower()]["total_spent"] = round(
+        _customers[email.lower()]["total_spent"] + amount, 2
+    )
+
+    return {
+        "success": True,
+        "order_id": order_id,
+        "product": product["name"],
+        "quantity": quantity,
+        "amount": amount,
+        "status": "processing",
+        "estimated_delivery": "3-5 business days",
+        "message": f"Order {order_id} placed successfully! Total: ${amount:.2f}. "
+                   f"Estimated delivery: 3-5 business days."
+    }
+
+
 async def check_refund_eligibility(order_id: str) -> dict:
-    """
-    Checks whether a refund can be issued for this order.
-    Returns eligibility flag + reason.
-    """
+    """Checks whether a refund can be issued for this order."""
     await asyncio.sleep(0.05)
     order = _orders.get(order_id.strip().upper())
     if not order:
@@ -106,12 +209,10 @@ async def check_refund_eligibility(order_id: str) -> dict:
     if order["status"] != "delivered":
         return {"eligible": False, "reason": f"Order status is '{order['status']}' — cannot issue refund."}
 
-    # Check return window
     return_deadline = order.get("return_deadline")
     if return_deadline:
         deadline = date.fromisoformat(return_deadline)
-        today = date.today()
-        if today > deadline:
+        if date.today() > deadline:
             return {
                 "eligible": False,
                 "reason": f"Return window expired on {return_deadline}.",
@@ -132,8 +233,6 @@ async def issue_refund(order_id: str, amount: float) -> dict:
     Has a simulated 20% failure rate to test agent resilience.
     """
     await asyncio.sleep(0.1)
-
-    # Simulate occasional backend failure
     if random.random() < 0.20:
         raise TimeoutError(f"Refund service timed out for order '{order_id}'. Retry.")
 
@@ -141,14 +240,12 @@ async def issue_refund(order_id: str, amount: float) -> dict:
     if not order:
         return {"success": False, "error": f"Order '{order_id}' not found."}
 
-    # Mark as refunded in memory (for this session)
     _orders[order_id]["refund_status"] = "refunded"
-
     return {
         "success": True,
         "order_id": order_id,
         "amount_refunded": amount,
-        "message": f"Refund of ${amount:.2f} issued successfully. Will appear in 5–7 business days.",
+        "message": f"Refund of ${amount:.2f} issued. Will appear in 5-7 business days.",
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
@@ -168,7 +265,7 @@ async def cancel_order(order_id: str) -> dict:
     return {
         "success": True,
         "order_id": order_id,
-        "message": "Order cancelled successfully. Confirmation email will be sent within 1 hour."
+        "message": "Order cancelled. Confirmation email sent within 1 hour."
     }
 
 
@@ -184,10 +281,7 @@ async def send_reply(ticket_id: str, message: str) -> dict:
 
 
 async def escalate(ticket_id: str, summary: str, priority: str) -> dict:
-    """
-    Escalate a ticket to a human agent.
-    priority: 'low' | 'medium' | 'high' | 'urgent'
-    """
+    """Escalate a ticket to a human agent. priority: low|medium|high|urgent"""
     await asyncio.sleep(0.05)
     valid_priorities = {"low", "medium", "high", "urgent"}
     if priority.lower() not in valid_priorities:
@@ -203,16 +297,19 @@ async def escalate(ticket_id: str, summary: str, priority: str) -> dict:
     }
 
 
-# ── Tool registry (for the agent to discover tools) ───────────────────────────
+# ── Tool registry ─────────────────────────────────────────────────────────────
 TOOLS = {
-    "get_customer": get_customer,
-    "get_order": get_order,
-    "get_product": get_product,
-    "get_orders_by_customer": get_orders_by_customer,
-    "search_knowledge_base": search_knowledge_base,
-    "check_refund_eligibility": check_refund_eligibility,
-    "issue_refund": issue_refund,
-    "cancel_order": cancel_order,
-    "send_reply": send_reply,
-    "escalate": escalate,
+    "get_customer":            get_customer,
+    "get_order":               get_order,
+    "get_product":             get_product,
+    "get_orders_by_customer":  get_orders_by_customer,
+    "list_products":           list_products,
+    "search_knowledge_base":   search_knowledge_base,
+    "register_customer":       register_customer,
+    "place_order":             place_order,
+    "check_refund_eligibility":check_refund_eligibility,
+    "issue_refund":            issue_refund,
+    "cancel_order":            cancel_order,
+    "send_reply":              send_reply,
+    "escalate":                escalate,
 }

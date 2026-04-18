@@ -25,8 +25,11 @@ def _load_tickets() -> list[dict]:
 
 async def process_ticket_safe(agent, ticket: dict, dead_letter: list) -> dict | None:
     """Wrap agent.solve() so a crash in one ticket doesn't stop the others."""
+    from audit_logger import append_audit
     try:
-        return await agent.solve(ticket)
+        result = await agent.solve(ticket)
+        append_audit(result, source="batch")
+        return result
     except Exception as e:
         record = {
             "ticket_id": ticket.get("ticket_id", "UNKNOWN"),

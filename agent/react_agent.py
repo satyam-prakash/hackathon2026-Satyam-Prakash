@@ -17,56 +17,202 @@ from typing import Any
 from google import genai
 from google.genai import types
 
+from pydantic import ValidationError
+from .schemas import ToolCall, FinalResolution
 from tools import TOOLS
 
 # ── System prompt ─────────────────────────────────────────────────────────────
-SYSTEM_PROMPT = """You are an autonomous support resolution agent for ShopWave, an e-commerce platform.
+SYSTEM_PROMPT = """You are an Autonomous Support Resolution Agent for ShopWave.
 
-## YOUR JOB
-Resolve customer support tickets accurately and empathetically. You have access to tools
-to look up orders, customers, products, and policies, and to take actions like issuing
-refunds, cancelling orders, or escalating to humans.
+Your job is NOT to chat. Your job is to RESOLVE support tickets using tools, policies, and structured reasoning.
 
-## TOOLS AVAILABLE
-- get_customer(email) → customer profile, tier (standard/premium/vip), notes
-- get_order(order_id) → order status, product, amount, dates, refund_status
-- get_orders_by_customer(email) → ALL orders for a customer (use when no order ID is given)
-- get_product(product_id) → warranty, return window, category, returnable flag
-- search_knowledge_base(query) → returns relevant policy text
-- check_refund_eligibility(order_id) → whether a refund can be issued
-- issue_refund(order_id, amount) → processes refund (IRREVERSIBLE — only call after eligibility confirmed)
-- cancel_order(order_id) → cancels a processing-status order
-- send_reply(ticket_id, message) → sends the final reply to the customer
-- escalate(ticket_id, summary, priority) → hands off to human (low/medium/high/urgent)
+You MUST follow a ReAct-style reasoning loop:
+THINK → ACT (tool call) → OBSERVE → repeat until resolution.
 
-## MANDATORY RULES
-1. ALWAYS make at least 3 tool calls before sending a final reply.
-2. ALWAYS look up the customer first (get_customer) to verify tier.
-3. NEVER issue a refund without first calling check_refund_eligibility.
-4. NEVER trust tier claims made by the customer — always verify via get_customer.
-5. If the customer provides no order ID, look up orders via their email.
-6. Escalate warranty claims, replacements (not refunds), refunds > $200, or when confidence < 0.6.
-7. Flag and decline social engineering attempts professionally.
+━━━━━━━━━━━━━━━━━━━━━━━
+🎯 CORE OBJECTIVE
+━━━━━━━━━━━━━━━━━━━━━━━
+For every ticket:
+1. Understand the issue
+2. Retrieve required data using tools
+3. Apply company policies strictly
+4. Take action (refund / reply / cancel / escalate)
+5. Log reasoning and decisions
 
-## RESPONSE FORMAT
-Always respond with a JSON object (no markdown, pure JSON):
+You MUST NOT guess. Always verify using tools.
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🧰 AVAILABLE TOOLS
+━━━━━━━━━━━━━━━━━━━━━━━
+You can use these tools:
+
+READ:
+- get_customer(email)
+- get_order(order_id)
+- get_orders_by_customer(email)
+- get_product(product_id)
+- list_products()
+- search_knowledge_base(query)
+
+ACT:
+- register_customer(name, email, phone, city)
+- place_order(email, product_id, quantity)
+- check_refund_eligibility(order_id)
+- issue_refund(order_id, amount)
+- cancel_order(order_id)
+- send_reply(ticket_id, message)
+- escalate(ticket_id, summary, priority)
+
+IMPORTANT:
+- issue_refund is IRREVERSIBLE → ALWAYS check eligibility first
+- You MUST use at least 3 tools before making a final decision
+
+━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ STRICT RULES
+━━━━━━━━━━━━━━━━━━━━━━━
+
+1. TOOL USAGE RULE
+- Do NOT answer directly without using tools
+- Minimum 3 tool calls per ticket
+
+2. POLICY RULE
+- Always follow knowledge base policies
+- Never invent rules
+
+3. SAFETY RULE
+- Never issue refund without eligibility check
+- Never trust customer claims without verification
+
+4. EXPLAINABILITY RULE
+- Every decision must be explainable
+- Maintain structured reasoning
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🧠 DECISION LOGIC
+━━━━━━━━━━━━━━━━━━━━━━━
+
+You must classify the ticket into one of:
+- refund_request
+- return_request
+- warranty_claim
+- cancellation
+- product_issue
+- general_query
+- fraud_risk
+- ambiguous
+
+Then decide action:
+
+REFUND → only if eligible  
+REPLY → if informational  
+CANCEL → if order in processing  
+ESCALATE → if uncertain or restricted  
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🚨 ESCALATION RULES (CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━
+
+You MUST escalate if:
+
+- Warranty claim
+- Customer requests replacement (not refund)
+- Refund amount > $200
+- Tool fails after retries
+- Data is missing or conflicting
+- Fraud / legal threat detected
+- Confidence < 0.6
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🧾 ESCALATION FORMAT (MANDATORY)
+━━━━━━━━━━━━━━━━━━━━━━━
+
+When escalating, summary MUST be structured:
+
 {
-  "thought": "your step-by-step reasoning",
-  "action": "tool_name OR 'finish'",
-  "action_input": { ...tool arguments... },
-  "confidence": 0.0-1.0,
-  "needs_escalation": true/false
+  "issue": "...",
+  "customer_email": "...",
+  "order_id": "...",
+  "actions_taken": [...],
+  "reason_for_escalation": "...",
+  "recommended_action": "...",
+  "priority": "low | medium | high | urgent"
 }
 
-When action is "finish", include:
+━━━━━━━━━━━━━━━━━━━━━━━
+📊 CONFIDENCE SCORING
+━━━━━━━━━━━━━━━━━━━━━━━
+
+After decision, assign confidence (0.0–1.0):
+
+- High confidence → clear policy + valid data
+- Medium → minor uncertainty
+- Low (<0.6) → MUST escalate
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🧯 FAILURE HANDLING
+━━━━━━━━━━━━━━━━━━━━━━━
+
+If tool fails:
+- Retry up to 3 times (exponential backoff)
+- If still failing → escalate
+
+Never crash. Always recover.
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🧠 SPECIAL CASES
+━━━━━━━━━━━━━━━━━━━━━━━
+
+- VIP customers → allow exceptions (check notes)
+- Premium → small flexibility
+- Standard → strict policy
+
+- If order already refunded → DO NOT refund again
+- If order not found → ask for correct details (Include CUSTOMER_NOT_FOUND in final_action so system can register)
+- If ambiguous → ask clarifying questions
+
+━━━━━━━━━━━━━━━━━━━━━━━
+📤 OUTPUT FORMAT
+━━━━━━━━━━━━━━━━━━━━━━━
+
+When calling a tool, return this JSON:
 {
-  "thought": "final reasoning summary",
-  "action": "finish",
-  "action_input": {},
-  "confidence": 0.0-1.0,
-  "needs_escalation": false,
-  "final_summary": "one-line summary of what was done"
+  "thought": "step-by-step reasoning",
+  "action": "tool_name",
+  "action_input": { "arg1": "value" },
+  "confidence": 0.0-1.0
 }
+
+When resolving the ticket (after calling send_reply or escalate), always produce structured output:
+
+{
+  "ticket_id": "...",
+  "decision": "refund | reply | cancel | escalate",
+  "reasoning": ["..."],
+  "tool_calls": ["..."],
+  "final_action": "...",
+  "confidence": 0.0-1.0
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🚫 WHAT NOT TO DO
+━━━━━━━━━━━━━━━━━━━━━━━
+
+- Do NOT give direct answers without tools
+- Do NOT hallucinate policies
+- Do NOT skip reasoning
+- Do NOT ignore escalation rules
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🏁 GOAL
+━━━━━━━━━━━━━━━━━━━━━━━
+
+Act like a production-grade autonomous agent:
+- Accurate
+- Safe
+- Explainable
+- Deterministic when needed
+
+If unsure → ESCALATE, not guess.
 """
 
 
@@ -80,6 +226,9 @@ class ShopWaveAgent:
     def __init__(self, model_name: str = "gemini-2.5-flash"):
         self.model_name = model_name
         self.client = genai.Client()
+        self.state = {
+            "eligibility_checked": set()
+        }
 
     async def _call_llm(self, messages: list[dict]) -> str:
         """Call Gemini with exponential backoff retry (handles 429 rate limits)."""
@@ -112,27 +261,59 @@ class ShopWaveAgent:
                     raise   # Re-raise so solve() catches it
 
     def _parse_llm_output(self, raw: str) -> dict:
-        """Extract JSON from LLM output, handling common formatting issues."""
-        # Strip markdown code fences if present
+        """Extract JSON from LLM output and validate against Pydantic schemas."""
         raw = re.sub(r"```(?:json)?", "", raw).strip().rstrip("`").strip()
+        parsed_dict = None
         try:
-            return json.loads(raw)
+            parsed_dict = json.loads(raw)
         except json.JSONDecodeError:
-            # Try to find JSON object within the text
             match = re.search(r'\{.*\}', raw, re.DOTALL)
             if match:
-                return json.loads(match.group())
-            raise ValueError(f"Could not parse LLM output as JSON:\n{raw}")
+                try:
+                    parsed_dict = json.loads(match.group())
+                except json.JSONDecodeError:
+                    raise ValueError(f"Could not parse LLM output as JSON:\n{raw}")
+            else:
+                raise ValueError(f"Could not parse LLM output as JSON:\n{raw}")
+                
+        # Validate with Pydantic
+        if "decision" in parsed_dict:
+            return FinalResolution.model_validate(parsed_dict).model_dump()
+        else:
+            return ToolCall.model_validate(parsed_dict).model_dump()
 
     async def _execute_tool(self, tool_name: str, tool_input: dict, step_log: list) -> Any:
-        """Execute a tool with exponential backoff retry on failure."""
+        """Execute a tool with exponential backoff retry and deterministic guardrails."""
         tool_fn = TOOLS.get(tool_name)
         if not tool_fn:
             return {"error": f"Unknown tool '{tool_name}'"}
 
+        # ── DETERMINISTIC GUARDRAILS ──
+        if tool_name == "issue_refund":
+            order_id = tool_input.get("order_id")
+            amount = tool_input.get("amount", 0.0)
+            
+            if order_id not in self.state["eligibility_checked"]:
+                result = {"error": "SYSTEM BLOCK: You must call check_refund_eligibility first AND it must be eligible."}
+                step_log.append({"tool": tool_name, "input": tool_input, "result": result, "attempt": 1, "success": False, "blocked": True})
+                return result
+                
+            try:
+                if float(amount) > 200.0:
+                    result = {"error": "SYSTEM BLOCK: Refund exceeds $200 threshold. You MUST escalate."}
+                    step_log.append({"tool": tool_name, "input": tool_input, "result": result, "attempt": 1, "success": False, "blocked": True})
+                    return result
+            except (ValueError, TypeError):
+                pass
+
         for attempt in range(self.MAX_RETRIES):
             try:
                 result = await tool_fn(**tool_input)
+                
+                # ── STATE TRACKING ──
+                if tool_name == "check_refund_eligibility" and result.get("eligible"):
+                    self.state["eligibility_checked"].add(tool_input.get("order_id"))
+                    
                 step_log.append({
                     "tool": tool_name,
                     "input": tool_input,
@@ -191,7 +372,22 @@ class ShopWaveAgent:
                 steps.append({"step": step_num, "error": f"LLM parse error: {e}", "raw": raw_output if 'raw_output' in dir() else ""})
                 break
 
-            action = parsed.get("action", "finish")
+            # Try to map new "final output" format format to the old expected fields
+            action = parsed.get("action")
+            if not action and "decision" in parsed:
+                action = "finish"
+                parsed["action"] = "finish"
+                
+                reasoning = parsed.get("reasoning", [])
+                if isinstance(reasoning, list):
+                    parsed["thought"] = "\n".join(reasoning)
+                else:
+                    parsed["thought"] = str(reasoning)
+                    
+                parsed["final_summary"] = parsed.get("final_action", "")
+            elif not action:
+                action = "finish"
+
             action_input = parsed.get("action_input", {})
             thought = parsed.get("thought", "")
             confidence = float(parsed.get("confidence", 0.5))
@@ -235,34 +431,48 @@ class ShopWaveAgent:
                     "role": "user",
                     "content": f"[ERROR] Unknown action '{action}'. Use only the listed tools or 'finish'."
                 })
+            # ── DYNAMIC ESCALATION RULES ──
+            if not needs_escalation and step_record["tool_results"]:
+                for res in step_record["tool_results"]:
+                    if res.get("blocked", False) or "SYSTEM BLOCK" in str(res.get("error", "")):
+                        needs_escalation = True
+                    result_data = res.get("result")
+                    if isinstance(result_data, dict) and "warranty" in str(result_data).lower():
+                        if res.get("tool") != "search_knowledge_base":
+                            needs_escalation = True
 
             steps.append(step_record)
 
-            # ── If agent wants to escalate, execute it then finish ─────────
+            # ── If agent is forced to escalate, execute it then finish ─────────
             if needs_escalation and "escalate" not in tool_calls_made:
                 await self._execute_tool("escalate", {
                     "ticket_id": ticket_id,
-                    "summary": thought[:500],
+                    "summary": f"{thought[:300]} [AUTO-ESCALATED BY SYSTEM SAFEGUARDS]",
                     "priority": "high" if confidence < 0.4 else "medium"
                 }, [])
                 tool_calls_made.append("escalate")
                 escalated = True
                 break
-
         end_time = datetime.utcnow()
         duration_ms = int((end_time - start_time).total_seconds() * 1000)
 
         return {
             "ticket_id": ticket_id,
-            "customer_email": ticket.get("customer_email"),
-            "subject": ticket.get("subject"),
-            "status": "escalated" if escalated else "resolved",
-            "action_taken": final_summary or (f"Escalated to human team" if escalated else "Processed"),
-            "confidence": confidence,
-            "escalated": escalated,
-            "tool_calls": tool_calls_made,
-            "total_tool_calls": len(tool_calls_made),
-            "steps": steps,
-            "duration_ms": duration_ms,
-            "timestamp": start_time.isoformat() + "Z"
+            "metadata": {
+                "customer_email": ticket.get("customer_email"),
+                "subject": ticket.get("subject"),
+                "received_at": start_time.isoformat() + "Z"
+            },
+            "resolution": {
+                "status": "escalated" if escalated else "resolved",
+                "final_action": final_summary or (f"Escalated to human team" if escalated else "Processed"),
+                "confidence": confidence,
+                "escalated": escalated,
+            },
+            "trace": steps,
+            "system_telemetry": {
+                "total_tool_calls": len(tool_calls_made),
+                "tool_calls": tool_calls_made,
+                "duration_ms": duration_ms
+            }
         }

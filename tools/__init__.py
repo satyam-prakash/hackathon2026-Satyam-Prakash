@@ -3,7 +3,10 @@ from .mock_tools import (
     get_order,
     get_product,
     get_orders_by_customer,
+    list_products,
     search_knowledge_base,
+    register_customer,
+    place_order,
     check_refund_eligibility,
     issue_refund,
     cancel_order,
@@ -14,6 +17,7 @@ from .mock_tools import (
 
 __all__ = [
     "get_customer", "get_order", "get_product", "get_orders_by_customer",
-    "search_knowledge_base", "check_refund_eligibility", "issue_refund",
-    "cancel_order", "send_reply", "escalate", "TOOLS",
+    "list_products", "search_knowledge_base", "register_customer", "place_order",
+    "check_refund_eligibility", "issue_refund", "cancel_order",
+    "send_reply", "escalate", "TOOLS",
 ]

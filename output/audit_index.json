@@ -1,0 +1,133 @@
+{
+  "total": 9,
+  "resolved": 7,
+  "escalated": 1,
+  "dead_letter": 0,
+  "avg_confidence": 0.872,
+  "tickets": [
+    {
+      "ticket_id": "TEST-001",
+      "source": "cli_test",
+      "status": "resolved",
+      "confidence": 1.0,
+      "escalated": false,
+      "tool_calls": [
+        "get_customer",
+        "get_order",
+        "check_refund_eligibility",
+        "send_reply"
+      ],
+      "duration_ms": 14854,
+      "logged_at": "2026-04-18T15:50:51.471669Z"
+    },
+    {
+      "ticket_id": "CUSTOM-001",
+      "source": "interactive_cli",
+      "status": "resolved",
+      "confidence": 1.0,
+      "escalated": false,
+      "tool_calls": [
+        "get_customer",
+        "escalate"
+      ],
+      "duration_ms": 8308,
+      "logged_at": "2026-04-18T15:52:16.624600Z"
+    },
+    {
+      "ticket_id": "string",
+      "source": "api",
+      "status": "resolved",
+      "confidence": 1.0,
+      "escalated": false,
+      "tool_calls": [
+        "get_customer",
+        "escalate"
+      ],
+      "duration_ms": 8309,
+      "logged_at": "2026-04-18T15:54:18.753370Z"
+    },
+    {
+      "ticket_id": "CUSTOM-002",
+      "source": "interactive_cli",
+      "status": "resolved",
+      "confidence": 1.0,
+      "escalated": false,
+      "tool_calls": [
+        "get_customer",
+        "get_orders_by_customer",
+        "get_product",
+        "send_reply"
+      ],
+      "duration_ms": 12585,
+      "logged_at": "2026-04-18T15:56:14.082948Z"
+    },
+    {
+      "ticket_id": "ORDER-001",
+      "source": "interactive_chat",
+      "status": "resolved",
+      "confidence": 1.0,
+      "escalated": false,
+      "tool_calls": [
+        "list_products",
+        "place_order"
+      ],
+      "duration_ms": 0,
+      "logged_at": "2026-04-18T16:08:25.041400Z"
+    },
+    {
+      "ticket_id": "TKT-001",
+      "source": "cli_single",
+      "status": "resolved",
+      "confidence": 0.95,
+      "escalated": false,
+      "tool_calls": [
+        "get_customer",
+        "get_order",
+        "check_refund_eligibility",
+        "search_knowledge_base",
+        "escalate",
+        "escalate"
+      ],
+      "duration_ms": 30315,
+      "logged_at": "2026-04-18T16:11:22.956405Z"
+    },
+    {
+      "ticket_id": "TKT-001",
+      "source": "cli_single",
+      "status": "unknown",
+      "confidence": 0,
+      "escalated": false,
+      "tool_calls": [],
+      "duration_ms": null,
+      "logged_at": "2026-04-18T16:17:04.285413Z"
+    },
+    {
+      "ticket_id": "TKT-001",
+      "source": "unknown",
+      "status": "escalated",
+      "confidence": 0.9,
+      "escalated": true,
+      "tool_calls": [
+        "get_customer",
+        "get_order",
+        "get_product",
+        "escalate"
+      ],
+      "duration_ms": 8997,
+      "logged_at": "2026-04-18T16:17:58.153224Z"
+    },
+    {
+      "ticket_id": "ORDER-001",
+      "source": "interactive_chat",
+      "status": "resolved",
+      "confidence": 1.0,
+      "escalated": false,
+      "tool_calls": [
+        "list_products",
+        "place_order"
+      ],
+      "duration_ms": 0,
+      "logged_at": ""
+    }
+  ]
+}
